@@ -20,7 +20,7 @@ services:
                         mode: host
                 container_name: cas
                 networks:
-                      - romain-net
+                      - lasticot
         las:
                 image: iexechub/sconecuratedimages-iexec:las-v3.0
                 devices:
@@ -32,7 +32,7 @@ services:
                         mode: host
                 container_name: las
                 networks:
-                      - romain-net
+                      - lasticot
         scone:
                 volumes:
                       - /home/romain/iexecdev/iexec-secret-vault-deploy:/home
@@ -42,7 +42,7 @@ services:
                 container_name: scone
                 command: sh -c 'apk add curl && tail -f'
                 networks:
-                      - romain-net
+                      - lasticot
 networks:
-        romain-net:
+        lasticot:
                 external: true

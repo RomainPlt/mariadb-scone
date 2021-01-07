@@ -21,12 +21,12 @@ services:
       - SCONE_FORK=1
       - SCONE_SESSION_ID=session_secret-vault
     networks:
-      - romain-net
+      - lasticot
      
 volumes:
   secret-vault:
     external: true
 
 networks:
-  romain-net:
+  lasticot:
     external: true
