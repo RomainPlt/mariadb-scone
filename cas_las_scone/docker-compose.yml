@@ -1,0 +1,48 @@
+
+version: '3.4'
+services:
+        cas:
+                
+                environment:    
+                      - SCONE_LOG=7
+                      - SCONE_MODE=HW  
+                      - SCONE_LAS_ADDR=las:18766
+                image: iexechub/sconecuratedimages-iexec:cas-v3.0
+                devices:
+                      - /dev/isgx:/dev/isgx 
+                ports:
+                      - target: 8081
+                        published: 8081
+                        protocol: tcp
+                        mode: host
+                      - target: 18765
+                        protocol: tcp
+                        mode: host
+                container_name: cas
+                networks:
+                      - romain-net
+        las:
+                image: iexechub/sconecuratedimages-iexec:las-v3.0
+                devices:
+                      - /dev/isgx:/dev/isgx
+                ports:
+                      - target: 18766
+                        published: 18766
+                        protocol: tcp
+                        mode: host
+                container_name: las
+                networks:
+                      - romain-net
+        scone:
+                volumes:
+                      - /home/romain/iexecdev/iexec-secret-vault-deploy:/home
+                image: sconecuratedimages/public-apps:python-3.7.3-alpine3.10-scone3.0
+                devices:
+                      - /dev/isgx:/dev/isgx
+                container_name: scone
+                command: sh -c 'apk add curl && tail -f'
+                networks:
+                      - romain-net
+networks:
+        romain-net:
+                external: true

@@ -1,0 +1,32 @@
+
+version: '3.4'
+services: 
+  secret-vault: 
+    image: romainplt/secret-vault
+    container_name: secret-vault
+    ports:
+      - 8080:8080
+    devices: 
+      - /dev/isgx
+    volumes:
+      - /home/romain/iexecdev/iexec-secret-vault/data:/tmp/secret-vault/data:rw
+    environment:
+      - SCONE_LAS_ADDR=las
+      - SCONE_CONFIG_ID=session_secret-vault/secret-vault      
+      - SCONE_LOG=7
+      - SCONE_MODE=hw
+      - SCONE_HEAP=2G
+      - SCONE_CAS_ADDR=cas
+      - SCONE_ALPINE=1
+      - SCONE_FORK=1
+      - SCONE_SESSION_ID=session_secret-vault
+    networks:
+      - romain-net
+     
+volumes:
+  secret-vault:
+    external: true
+
+networks:
+  romain-net:
+    external: true

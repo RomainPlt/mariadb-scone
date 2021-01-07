@@ -1,0 +1,28 @@
+
+name: session_secret-vault
+services:
+  - name: secret-vault
+    image_name: secret-vault-image
+    mrenclaves: [fadce3e7796887ec2c5cd64cc1fbc3a5f8b3a44a4a5f5eb00cf171e5ea84e952]
+    pwd: /
+    fspf_path: /fspf.pb
+    fspf_key: 3cc91bfee28b66ce81b20967123d05ebe3155571cf6ddef1b0f28151021fca5b
+    fspf_tag: dcb6d54e1c87bec0790a66ab3ec1b337
+    command: 'java -jar /app.jar'
+    environment:
+      CLASSPATH: '/'
+      SCONE_MODE: hw
+      JAVA_TOOL_OPTIONS: '-Xmx256m'
+      LD_LIBRARY_PATH: '/usr/lib/jvm/java-11-openjdk/lib/server:/usr/lib/jvm/java-11-openjdk/lib:/usr/lib/jvm/java-11-openjdk/../lib'
+      SECRET: toto
+      KEY: tata
+      
+images:
+  - name: secret-vault-image
+    mrenclaves: [fadce3e7796887ec2c5cd64cc1fbc3a5f8b3a44a4a5f5eb00cf171e5ea84e952]
+    volumes:
+      - name: database
+        path: /tmp/secret-vault/data
+        
+volumes:
+  - name: database
