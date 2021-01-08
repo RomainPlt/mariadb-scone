@@ -6,16 +6,16 @@ services:
     mrenclaves: [fadce3e7796887ec2c5cd64cc1fbc3a5f8b3a44a4a5f5eb00cf171e5ea84e952]
     pwd: /
     fspf_path: /fspf.pb
-    fspf_key: 77ae0ba921272a42ad2819604d25c7638cb06fcfe983f0be323f205b4a3528ec
-    fspf_tag: a94052c9b9a2df98b9cc04ad0c08f136
+    fspf_key: 1c7ff6a9cd5439cfbcc7730d0a105e04dd70e79055ad605427ba738f904b6c42
+    fspf_tag: 113246293e73a018cad6d3a7fef6f7be
     command: 'java -jar /app.jar'
     environment:
       CLASSPATH: '/'
       SCONE_MODE: hw
       JAVA_TOOL_OPTIONS: '-Xmx256m'
       LD_LIBRARY_PATH: '/usr/lib/jvm/java-11-openjdk/lib/server:/usr/lib/jvm/java-11-openjdk/lib:/usr/lib/jvm/java-11-openjdk/../lib'
-      SECRET: toto
-      KEY: tata
+      SECRET: leSecret
+      KEY: laKey
       
 images:
   - name: secret-vault-image

@@ -20,7 +20,7 @@ services:
                         mode: host
                 container_name: cas
                 networks:
-                      - $network
+                      - local-network
         las:
                 image: iexechub/sconecuratedimages-iexec:las-v3.0
                 devices:
@@ -30,19 +30,20 @@ services:
                         published: 18766
                         protocol: tcp
                         mode: host
-                container_name: las
+                container_name: las              
                 networks:
-                      - $network
+                      - local-network
         scone:
                 volumes:
-                      - $path:/home
+                      - $VOLUME:/home
                 image: sconecuratedimages/public-apps:python-3.7.3-alpine3.10-scone3.0
                 devices:
                       - /dev/isgx:/dev/isgx
                 container_name: scone
                 command: sh -c 'apk add curl && tail -f'
                 networks:
-                      - $network
+                      - local-network
+        
 networks:
-        $network:
+        local-network:
                 external: true
