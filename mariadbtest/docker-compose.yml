@@ -1,0 +1,18 @@
+version: "3"
+services:
+        mariadb:
+                image: 'mariadb:10.4.12'
+                restart: 'always'
+                ports:
+                  - 3306:3306
+                environment:
+                  - MYSQL_ROOT_PASSWORD=password
+                  - MYSQL_DATABASE=database
+                  - MYSQL_USER=user
+                        
+                networks:
+                        - local-network
+
+networks:
+        local-network:
+                external: true

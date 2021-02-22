@@ -1,0 +1,32 @@
+#docker-compose for mariaDB image
+
+version: '3.4'
+services: 
+  maria-db: 
+    image: registry.scontain.com:5050/sconecuratedimages/apps:mariadb-10-alpine-scone4.2.0
+    container_name: maria-db
+    ports:
+      - 8079:8079
+    devices: 
+      - /dev/isgx
+    volumes:
+      - maria-db:/tmp/maria-db/data:rw
+    environment:
+      - SCONE_CONFIG_ID=shared_session/vault_mariadb      
+      - SCONE_LOG=7
+      - SCONE_MODE=hw
+      - SCONE_HEAP=2G
+      - SCONE_ALPINE=1
+      - SCONE_FORK=1
+      - SCONE_SESSION_ID=shared_session
+      - MYSQL_ROOT_PASSWORD=password
+    networks:
+      - local-network
+     
+volumes:
+  maria-db:
+    external: true
+
+networks:
+  local-network:
+    external: true

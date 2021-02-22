@@ -1,0 +1,40 @@
+name: maria-db-session
+version: "0.2"
+services:
+  - name: maria-db
+    image_name: maria-db-image
+    mrenclaves: [1db64462278b130f2891e8e1604bd80fa42abe4d1280e6d67bdb4be82192e3e5]
+    command: mysqld --innodb-use-native-aio=0
+    pwd: /
+    environment:
+      CLASSPATH: '/'
+      SCONE_MODE: hw
+      JAVA_TOOL_OPTIONS: '-Xmx64m'
+      LD_LIBRARY_PATH: '/usr/lib/jvm/java-11-openjdk/lib/server:/usr/lib/jvm/java-11-openjdk/lib:/usr/lib/jvm/java-11-openjdk/../lib'
+      SECRET: toto
+      KEY: tata
+      
+secrets:
+  - name: super_secret_secret
+    kind: ascii
+    value: "hello"
+    export_public: true
+    
+
+images:
+  - name: maria-db-image
+    injection_files:
+       - path: /etc/my.cnf
+         content: |
+                  # This group is read both both by the client and the server
+                  # use it for options that affect everything
+                  [client-server]
+                  # This group is read by the server
+                  [mysqld]
+                  user=mysql
+                  skip-host-cache
+                  skip-name-resolve
+                  # Disabling symbolic-links is recommended to prevent assorted security risks
+                  symbolic-links=0
+                  # include all files from the config directory
+                  !includedir /etc/my.cnf.d

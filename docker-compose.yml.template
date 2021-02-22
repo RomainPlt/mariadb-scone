@@ -35,7 +35,7 @@ services:
       
   scone:
     volumes:
-      - /home/romain/iexecdev/maria-db-deploy:/home
+      - %VOLUME%:/home
     image: sconecuratedimages/public-apps:python-3.7.3-alpine3.10-scone3.0
     devices:
       - /dev/isgx:/dev/isgx
@@ -45,7 +45,7 @@ services:
       - local-network
 
   secret-vault: 
-    image: romainplt/secret-vault
+    image: %IMAGE%
     container_name: secret-vault
     ports:
       - 8080:8080
@@ -59,7 +59,7 @@ services:
       - SCONE_CONFIG_ID=session_secret-vault/secret-vault      
       - SCONE_LOG=7
       - SCONE_MODE=hw
-      - SCONE_HEAP=2G
+      - SCONE_HEAP=%SCONE_HEAP%
       - SCONE_CAS_ADDR=cas
       - SCONE_ALPINE=1
       - SCONE_FORK=1
@@ -87,7 +87,6 @@ services:
       - SCONE_MODE=hw
       - SCONE_CAS_ADDR=cas
       - SCONE_ALPINE=1
-      - SCONE_FORK=1
       - SCONE_SESSION_ID=maria-db-session
     user: mysql
     networks:

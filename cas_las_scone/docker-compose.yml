@@ -5,7 +5,7 @@ services:
                 
                 environment:    
                       - SCONE_LOG=7
-                      - SCONE_MODE=HW  
+                      - SCONE_MODE=hw
                       - SCONE_LAS_ADDR=las:18766
                 image: iexechub/sconecuratedimages-iexec:cas-v3.0
                 devices:

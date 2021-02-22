@@ -1,11 +1,11 @@
 #!/bin/bash
 
 
-
+	
 ####################################################################### VARIABLES
 
 
-path_to_app=~/iexecdev/iexec-secret-vault
+path_to_app=/home/romain/iexecdev/maria-db-deploy
 path=$(pwd)
 name_app=secret-vault
 dockerfile=Dockerfile-trusted
@@ -14,6 +14,7 @@ secret=
 key=
 scone_heap=2G
 build_arg=build/libs/*.jar
+passive=no
 
 ####################################################################### FUNCTIONS
 
@@ -48,7 +49,8 @@ usage()
 }	
 
 remove_docker_containers()
-{
+{	
+
 	echo "Here are your current containers : "
 	yesorno=yes
 	while [ $yesorno = yes ]; do
@@ -76,18 +78,16 @@ remove_docker_containers()
 		else 
 			yesorno=no
 		fi
-	done
-		
+	done	
 }
 
-build()
+build_secret_vault()
 { 
 	echo " "
 	if [ $(docker ps -qa -f name=secret-vault) ]; then
 		docker stop secret-vault						
 		docker rm secret-vault
 	fi
-	echo "BUILDING IMAGE"
 	cd $path_to_app
 	./gradlew build
 	cd $path_to_app
@@ -98,11 +98,7 @@ build()
 get_mr_enclave()
 {
 	cd $path_to_app
-	echo " "
-	echo "GET MR_ENCLAVE TAGS AND KEY"
-	echo " "
 	mr_enclave=$(grep -i -A 2 'RUN SCONE_MODE=SIM SCONE_HEAP=2G SCONE_LOG=7 SCONE_HASH=1 SCONE_ALPINE=1 /usr/bin/java' dockerlogs.txt | sed -n 3p)
-	echo "MrEnclave is : $mr_enclave"	
 }
 
 get_fspf_key_tag()
@@ -110,161 +106,106 @@ get_fspf_key_tag()
 	cd $path_to_app
 	fspf_tag1=$(grep '<FSPF_TAG>' dockerlogs.txt)
 	fspf_tag1=${fspf_tag1%<*}
-	echo "fspf tag is :"
 	fspf_tag=$(echo $fspf_tag1 | sed 's/.*>//')
-	echo $fspf_tag
+
 	fspf_key1=$(grep '<FSPF_KEY>' dockerlogs.txt)
 	fspf_key1=${fspf_key1%<*}
-	echo "fspf key is :"
+
 	fspf_key=$(echo $fspf_key1 | sed 's/.*>//')
-	echo $fspf_key	
+
 }
 
-create_session()
+create_session_secret_vault()
 {
 	cd $path
-	echo " "
-	echo "SESSION"
-	echo " "
 	sessionfile="session.yml"
 	if [ -f "$sessionfile" ]; then
 	        rm session.yml
 	fi
-	touch session.yml
-	echo "
-name: session_secret-vault
-services:
-  - name: secret-vault
-    image_name: secret-vault-image
-    mrenclaves: [$mr_enclave]
-    pwd: /
-    fspf_path: /fspf.pb
-    fspf_key: $fspf_key
-    fspf_tag: $fspf_tag
-    command: 'java -jar /app.jar'
-    environment:
-      CLASSPATH: '/'
-      SCONE_MODE: hw
-      JAVA_TOOL_OPTIONS: '-Xmx256m'
-      LD_LIBRARY_PATH: '/usr/lib/jvm/java-11-openjdk/lib/server:/usr/lib/jvm/java-11-openjdk/lib:/usr/lib/jvm/java-11-openjdk/../lib'
-      SECRET: $secret
-      KEY: $key
-      
-images:
-  - name: secret-vault-image
-    mrenclaves: [$mr_enclave]
-    volumes:
-      - name: database
-        path: /tmp/secret-vault/data
-        
-volumes:
-  - name: database" >> session.yml				
-
+	cp session.yml.template session.yml
+	sed -i "s/%MR_ENCLAVE%/$mr_enclave/" session.yml
+	sed -i "s/%FSPF_KEY%/$fspf_key/" session.yml
+	sed -i "s/%FSPF_TAG%/$fspf_tag/" session.yml
+	sed -i "s/%SECRET%/$secret/" session.yml
+	sed -i "s/%KEY%/$key/" session.yml
+	
 	cat session.yml
+	
 }
 
+create_session_maria()
+{
+
+	cd $path
+	sessiondb="session_db.yml"
+	session_client="session_client.yml"
+	if [ -f "sessiondb" ]; then
+		rm sessiondb.yml
+	fi
+	if [ -f "session-client" ]; then 
+		rm session_client.yml
+	fi
+	
+	export DBSESSION="MariaDBSession-1"
+	export DBCLIENT="MariaDBClientSession-1"
+	docker exec -it scone sh -c "scone session create --name=$DBCLIENT  --use-env scone-templates/mariadb/dbclient.yml"
+	docker exec -it scone sh -c "scone session create --name=$DBSESSION --use-env scone-templates/mariadb/dbsession.yml"
+
+}
 
 start_cas_las_scone-cli()
 {
-	echo " "
-	echo "STARTING CAS LAS AND SCONE-CLI"
-	echo " "
+
+	cd $path
+	docker volume rm secret-vault
+	docker volume create secret-vault
 	docker network create local-network
-	cd $path/cas_las_scone
-	export VOLUME=$path
-	docker-compose up -d
+	export volume=$path
+	
+	compose="docker-compose.yml"
+	if [ -f "$compose" ]; then
+	        rm docker-compose.yml
+	fi
+	cp docker-compose.yml.template docker-compose.yml
+	sed -i "s+%VOLUME%+$path+" docker-compose.yml
+	sed -i "s+%IMAGE%+$image_name+" docker-compose.yml
+	sed -i "s/%SCONE_HEAP%/$scone_heap/" docker-compose.yml
+	
+	cat docker-compose.yml
+
+	docker-compose up -d cas las scone
 	mr_enclave=$(docker exec -it cas sh -c "SCONE_HASH=1 /usr/local/bin/cas")
-	echo "CAS's MrEnclave is : "
-	echo $mr_enclave
-	echo " "
-	echo "wait for LAS to be up ..."
 	mr_enclave2=${mr_enclave%?}
 	sleep 2
-	echo "Attesting CAS ..."
 	trust=$(docker exec -it scone  sh -c "scone cas attest -G --only_for_testing-debug cas $mr_enclave2")
 }
 
 push_session_to_cas()
 {
 	cd $path
-	echo " "
-	echo "PUSHING SESSION TO CAS"
-	echo " "
+	rm sessionId.txt
 	docker exec -it scone sh -c "cd home && curl -k -s --cert conf/client.crt --key conf/client-key.key --data-binary @session.yml -X POST https://cas:8081/session" >> sessionId.txt
 	session_id=$(cat sessionId.txt | grep hash)
 	session_id=${session_id%*??}
 	session_id=${session_id:11}
-	echo "Session's id is : $session_id"
 	rm sessionId.txt 
 	echo $session_id >> sessionId.txt
 	rm session.txt
-	echo "Pushing session info in session.txt"
 	docker exec -it scone sh -c "cd home && curl -k -s --cert conf/client.crt --key conf/client-key.key https://cas:8081/session/session_secret-vault" >> session.txt
 }
 
 
-
-
-
 up_secret-vault()
 {
-	echo " "
-	echo "RUNNING SECRET-VAULT"
-	echo " "
 	cd $path
 	
-	if [[ -d $path_to_app/data ]]
-	then
-		echo "creating data"
-    		mkdir $path_to_app/data
-	fi
-
-	
-	echo "creating docker volume ..."
-	docker volume create --driver local --opt type=non --opt device=$path_to_app --opt o=bind secret-vault
 	echo " "
-
-	echo "creating docker compose ..."
-	
-	rm docker-compose.yml
-	
-	touch docker-compose.yml
-	echo "
-version: '3.4'
-services: 
-  secret-vault: 
-    image: $image_name
-    container_name: secret-vault
-    ports:
-      - 8080:8080
-    devices: 
-      - /dev/isgx
-    volumes:
-      - $path_to_app/data:/tmp/secret-vault/data:rw
-    environment:
-      - SCONE_LAS_ADDR=las
-      - SCONE_CONFIG_ID=session_secret-vault/secret-vault      
-      - SCONE_LOG=7
-      - SCONE_MODE=hw
-      - SCONE_HEAP=$scone_heap
-      - SCONE_CAS_ADDR=cas
-      - SCONE_ALPINE=1
-      - SCONE_FORK=1
-      - SCONE_SESSION_ID=session_secret-vault
-    networks:
-      - local-network
-     
-volumes:
-  secret-vault:
-    external: true
-
-networks:
-  local-network:
-    external: true">>docker-compose.yml
-      
-      echo " "
-      echo "Running $name_app"
-      docker-compose up secret-vault
+	echo "Running $name_app"
+      	if [ $passive = "no" ]; then
+      		docker-compose up secret-vault 
+      	else
+      		docker-compose up -d secret-vault
+      	fi
 }
 
 
@@ -310,6 +251,10 @@ while [ "$1" != "" ]; do
 			shift
 			build_arg=$1
 			;;
+		--passive )
+			shift
+			passive=$1
+			;;
 		-h | --help )
 			usage
 			exit
@@ -324,13 +269,19 @@ done
 
 
 remove_docker_containers
-build
+build_secret_vault
 get_mr_enclave
 get_fspf_key_tag
-create_session
+create_session_secret_vault
 start_cas_las_scone-cli 	
 push_session_to_cas
 up_secret-vault
+
+
+
+
+
+
 
 
 

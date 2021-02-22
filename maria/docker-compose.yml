@@ -1,0 +1,26 @@
+
+version: '3.4'
+services:
+  maria-db: 
+    image: registry.scontain.com:5050/sconecuratedimages/apps:mariadb-alpine-scone3.0
+    container_name: maria-db
+    devices: 
+      - /dev/isgx
+    environment:
+      - SCONE_CONFIG_ID=maria-db-session/maria-db      
+      - SCONE_LOG=7
+      - SCONE_MODE=hw
+      - SCONE_HEAP=2G
+      - SCONE_ALPINE=1
+      - SCONE_FORK=1
+      - SCONE_SESSION_ID=maria-db-session
+      - MYSQL_ROOT_PASSWORD=password
+    networks:
+      - local-network
+        
+networks:
+        local-network:
+                external: true
+                
+                
+                
