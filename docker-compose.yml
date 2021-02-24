@@ -89,7 +89,7 @@ services:
       - SCONE_ALPINE=1
       - SCONE_FORK=1
       - SCONE_SESSION_ID=maria-db-session
-    user: mysql
+    #user: mysql
     networks:
       - local-network
      

@@ -86,13 +86,16 @@ start_cas_las_scone-cli()
 	sed -i "s/%PASSWORD%/$password/" docker-compose.yml
 	
 	echo "starting cas las scone cli"
-	docker-compose up -d cas las scone
-	sleep 3
+	docker-compose up -d las cas scone
+	sleep 5
 	mr_enclave=$(docker exec -it cas sh -c "SCONE_HASH=1 /usr/local/bin/cas")
+	echo "mr enclave 1 : $mr_enclave"
 	mr_enclave2=${mr_enclave%?}
-	sleep 2
+	echo "mr enclave 2 : $mr_enclave2"
+
 	trust=$(docker exec -it scone  sh -c "scone cas attest -G --only_for_testing-debug cas $mr_enclave2")
 	echo $trust
+	
 }
 
 get_mr_enclave()

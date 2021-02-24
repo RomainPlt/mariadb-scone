@@ -7,8 +7,8 @@ services:
     mrenclaves: [fadce3e7796887ec2c5cd64cc1fbc3a5f8b3a44a4a5f5eb00cf171e5ea84e952]
     pwd: /
     fspf_path: /fspf.pb
-    fspf_key: ae71a26f5ec613a044b2b9d4fcfa4ccb5bb3d048723fccf14d3a16e5a8955361
-    fspf_tag: dcef7c9c76def25aecf7b31f8ba6efd3
+    fspf_key: 660e0dbf52b3c29dd0b951e3a2439febbce932d195f7f62a3d87244f20c6bd49
+    fspf_tag: bd8a4b71297f3a405e9cd481e579036d
     command: 'java -jar /app.jar'
     environment:
       CLASSPATH: '/'
