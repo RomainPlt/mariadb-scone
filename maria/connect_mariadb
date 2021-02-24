@@ -1,0 +1,177 @@
+#!/bin/bash
+
+############################################################## VARIABLES
+
+path=$(pwd)
+password=password
+
+
+
+############################################################## FUNCTIONS
+
+remove_docker_containers()
+{	
+
+	echo "Here are your current containers : "
+	yesorno=yes
+	while [ $yesorno = yes ]; do
+		docker ps -a --format "table {{.Image}}\t{{.Names}}\t{{.Status}}"
+		echo " "
+		echo "Do you want to stop/rm one or several ? (y/n)"
+		read answer
+
+		if [ $answer = y ] || [ $answer = yes ] || [ $answer = Y ]; then
+			yesorno=yes
+			echo "write 'all' if you want to remove them all. Or write one name."
+			read container
+			
+			if [ $container = all ]; then
+				echo "Removing all containers ..."
+				docker stop $(docker ps -a -q)
+		                docker rm $(docker ps -a -q)
+		                yesorno=no
+			else
+				echo "removing container $container"
+				docker stop $container 
+				docker rm $container
+				echo " "
+			fi
+		else 
+			yesorno=no
+		fi
+	done	
+}
+
+
+start_cas_las_scone-cli()
+{
+
+	cd $path
+	docker volume rm maria-db
+	docker volume create maria-db
+	docker network rm local-network
+	docker network create local-network
+	compose="docker-compose.yml"
+	if [ -f "$compose" ]; then
+	        rm docker-compose.yml
+	fi
+	cp docker-compose.yml.template docker-compose.yml
+	sed -i "s+%VOLUME%+$path+" docker-compose.yml
+	sed -i "s+%PASSWORD%+$password+" docker-compose.yml
+	echo "starting cas las scone-cli"
+	docker-compose up -d las cas scone
+	sleep 5
+	mr_enclave_cas=$(docker exec -it cas sh -c "SCONE_HASH=1 /usr/local/bin/cas")
+	mr_enclave_cas=${mr_enclave_cas%?}
+
+
+	trust=$(docker exec -it scone  sh -c "scone cas attest -G --only_for_testing-debug cas $mr_enclave_cas")
+	echo $trust
+}
+
+get_mr_enclave()
+{
+	cd $path
+	docker run --name mariadb --network local-network --device /dev/isgx -e MYSQL_ROOT_PASSWORD=$password -d registry.scontain.com:5050/sconecuratedimages/apps:mariadb-alpine-scone3.0
+	mr_enclave_maria=$(docker exec -it mariadb sh -c "SCONE_VERSION=1 SCONE_HEAP=2G SCONE_HASH=1 mysqld")
+	echo "maria mr enclave : $mr_enclave_maria"
+	mr_enclave_maria=${mr_enclave_maria%?}
+	docker stop mariadb
+	docker rm mariadb
+}
+
+create_and_push_mariadb_session()
+
+{
+	cd $path
+	sessionfile="session.yml"
+	if [ -f "$sessionfile" ]; then
+	        rm session.yml
+	fi
+	cp mariadb-session.yml.template session.yml
+
+	sed -i "s/%MR_ENCLAVE%/$mr_enclave_maria/" session.yml
+	sed -i "s/%PASSWORD%/$password/" session.yml
+	
+	
+	rm sessionIdDB.txt
+	docker exec -it scone sh -c "cd home && curl -k -s --cert conf/client.crt --key conf/client-key.key --data-binary @session.yml -X POST https://cas:8081/session" >> sessionIdDB.txt
+	session_idDB=$(cat sessionIdDB.txt | grep hash)
+	session_idDB=${session_idDB%*??}
+	session_idDB=${session_idDB:11}
+	rm sessionIdDB.txt 
+	echo $session_idDB >> sessionIdDB.txt
+	rm sessionDB.txt
+	docker exec -it scone sh -c "cd home && curl -k -s --cert conf/client.crt --key conf/client-key.key https://cas:8081/session/maria-db-session" >> sessionDB.txt
+}
+
+
+##################################################################### SCRIPT
+
+
+remove_docker_containers
+
+start_cas_las_scone-cli
+
+get_mr_enclave
+
+create_and_push_mariadb_session
+
+docker-compose up maria-db 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

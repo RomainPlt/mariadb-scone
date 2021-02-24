@@ -11,8 +11,6 @@ services:
       SCONE_MODE: hw
       JAVA_TOOL_OPTIONS: '-Xmx64m'
       LD_LIBRARY_PATH: '/usr/lib/jvm/java-11-openjdk/lib/server:/usr/lib/jvm/java-11-openjdk/lib:/usr/lib/jvm/java-11-openjdk/../lib'
-      SECRET: toto
-      KEY: tata
       
 secrets:
   - name: super_secret_secret
