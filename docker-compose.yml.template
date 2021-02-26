@@ -44,51 +44,25 @@ services:
     networks:
       - local-network
 
-  secret-vault: 
-    image: %IMAGE%
-    container_name: secret-vault
-    ports:
-      - 8080:8080
-    devices: 
-      - /dev/isgx
-    volumes:
-      - secret-vault:/tmp/secret-vault/data:rw
-    environment:
-      - JAVA_TOOL_OPTIONS=-Xmx64m
-      - SCONE_LAS_ADDR=las
-      - SCONE_CONFIG_ID=session_secret-vault/secret-vault      
-      - SCONE_LOG=7
-      - SCONE_MODE=hw
-      - SCONE_HEAP=%SCONE_HEAP%
-      - SCONE_CAS_ADDR=cas
-      - SCONE_ALPINE=1
-      - SCONE_FORK=1
-      - SCONE_SESSION_ID=session_secret-vault
-    networks:
-      - local-network
-       
   maria-db: 
-    image: registry.scontain.com:5050/sconecuratedimages/apps:mariadb-alpine-scone3.0
+    #image: registry.scontain.com:5050/sconecuratedimages/apps:mariadb-alpine-scone3.0
+    image: romainplt/mariadb
     container_name: maria-db
     devices: 
       - /dev/isgx
-    restart: 'always'
     ports:
       - 3306:3306
     environment:
-      - MYSQL_ROOT_PASSWORD=password
+      - MYSQL_ROOT_PASSWORD=%PASSWORD%
       - MYSQL_DATABASE= database
       - MYSQL_USER=user
-      - JAVA_TOOL_OPTIONS=-Xmx64m
       - SCONE_LAS_ADDR=las
-      - SCONE_CONFIG_ID=maria-db-session/maria-db      
+      - SCONE_CONFIG_ID=maria-db-session/maria-db
       - SCONE_HEAP=2G
       - SCONE_LOG=7
       - SCONE_MODE=hw
       - SCONE_CAS_ADDR=cas
-      - SCONE_ALPINE=1
       - SCONE_FORK=1
-      - SCONE_SESSION_ID=maria-db-session
     #user: mysql
     networks:
       - local-network

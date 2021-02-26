@@ -43,6 +43,14 @@ remove_docker_containers()
 }
 
 
+build()
+{ 	
+	docker image rm romainplt/mariadb
+
+	docker build --file Dockerfile --no-cache -t romainplt/mariadb .	
+}
+
+
 start_cas_las_scone-cli()
 {
 
@@ -110,6 +118,8 @@ create_and_push_mariadb_session()
 
 
 remove_docker_containers
+
+build
 
 start_cas_las_scone-cli
 
