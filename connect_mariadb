@@ -47,7 +47,7 @@ build()
 { 	
 	docker image rm romainplt/mariadb
 
-	docker build --file Dockerfile --no-cache -t romainplt/mariadb .	
+	docker build --file Dockerfile-2 --no-cache -t romainplt/mariadb .	
 }
 
 
